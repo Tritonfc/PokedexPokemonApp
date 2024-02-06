@@ -16,6 +16,7 @@ import com.plcoding.jetpackcomposepokedex.util.Constants
 import com.plcoding.jetpackcomposepokedex.util.Constants.PAGE_SIZE
 import com.plcoding.jetpackcomposepokedex.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -33,9 +34,46 @@ class PokemonListViewModel @Inject constructor(private val repository: PokemonRe
     var isLoading = mutableStateOf(false)
     var endReached = mutableStateOf(false)
 
-init {
-    loadPokemonPaginated()
-}
+    private var cachedPokemonList = listOf<PokemonListEntry>()
+    private var isSearchStarting = true
+    var isSearching = mutableStateOf(false)
+
+    init {
+        loadPokemonPaginated()
+    }
+
+    fun searchPokemonList(query: String) {
+        val listToSearch = if (isSearchStarting) {
+            pokemonList.value
+        } else {
+            cachedPokemonList
+        }
+
+        viewModelScope.launch(Dispatchers.Default) {
+            if (query.isEmpty()) {
+                pokemonList.value = cachedPokemonList
+                isSearching.value = false
+                isSearchStarting = true
+                return@launch
+            }
+
+            val results = listToSearch.filter {
+                it.pokemonName.contains(
+                    query.trim(),
+                    ignoreCase = true
+                ) || it.number.toString() == query.trim()
+            }
+
+            if(isSearchStarting){
+                cachedPokemonList = pokemonList.value
+                isSearchStarting =false
+            }
+            pokemonList.value = results
+            isSearching.value = true
+
+        }
+    }
+
     fun loadPokemonPaginated() {
         viewModelScope.launch {
             isLoading.value = true
@@ -58,7 +96,8 @@ init {
                             }
                         }
 
-                        val url = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${number}.png"
+                        val url =
+                            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${number}.png"
 
                         PokemonListEntry(entry.name.replaceFirstChar {
                             if (it.isLowerCase()) it.titlecase(

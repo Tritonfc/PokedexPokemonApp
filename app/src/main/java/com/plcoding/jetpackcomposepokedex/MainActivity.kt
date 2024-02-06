@@ -13,8 +13,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navArgument
+
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.plcoding.jetpackcomposepokedex.pokemonlist.PokemonListScreen
 import com.plcoding.jetpackcomposepokedex.ui.theme.JetpackComposePokedexTheme
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.internal.wait
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "pokemon_list_screen") {
                     composable(route = "pokemon_list_screen") {
+                        PokemonListScreen(navController = navController)
 
                     }
                     composable(
